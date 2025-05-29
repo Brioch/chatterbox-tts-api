@@ -7,6 +7,13 @@ import torch
 import argparse
 from pydub import AudioSegment
 import utils
+# from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+# load_dotenv()
+
+VOICES_DIR = os.getenv("VOICES_DIR")
 
 parser = argparse.ArgumentParser("server.py")
 parser.add_argument("voices_dir", help="Path to the audio prompt files dir.", type=str)

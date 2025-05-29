@@ -83,6 +83,24 @@ python -m http.server -d public -b 127.0.0.1
 
 Then open `http://localhost:8000` in your browser. You can set the API URL, enter text and select a voice to generate speech.
 
+### Podman / Docker
+
+#### Build
+
+A Dockerfile is provided to build an image for CUDA.
+
+podman build -t chatterbox-tts-api .
+podman run -it --rm -e 'API_HOST=0.0.0.0' -e 'API_PORT=5001' -e 'SUPPORTED_VOICES=alloy' -e 'VOICES_DIR=/app/voices' -v /path/to/voices:/app/voices -p 5001:5001 --device nvidia.com/gpu=all chatterbox-tts-server
+
+#### Compose
+
+A `compose.yaml` file is provided. It is configured for Podman and CUDA. Parameters can be set using a `.env` file.
+
+```sh
+cp .env.dist .env
+podman compose up
+```
+
 ### Usage in SillyTavern
 
 See [SillyTavern docs](docs/usage-sillytavern.md)

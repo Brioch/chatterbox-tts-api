@@ -1,0 +1,30 @@
+services:
+  chatterbox-tts-api:
+    image: chatterbox-tts-api
+    build:
+      context: .
+    ports:
+      - ${API_PORT}:${API_PORT}
+    # for Docker
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    # for Podman
+    devices:
+      - nvidia.com/gpu=all
+    environment:
+      - API_PORT=${API_PORT}
+      - API_HOST=${API_HOST}
+      - AUDIO_EXAGGERATION=${AUDIO_EXAGGERATION}
+      - AUDIO_TEMPERATURE=${AUDIO_TEMPERATURE}
+      - AUDIO_CFG_WEIGHT=${AUDIO_CFG_WEIGHT}
+      - SUPPORTED_VOICES=${SUPPORTED_VOICES}
+      - VOICES_DIR=${VOICES_DIR}
+      - HF_HOME=/root/.cache/huggingface
+    volumes:
+      - ./voices:/app/voices
+      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
