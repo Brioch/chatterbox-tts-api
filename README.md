@@ -4,7 +4,7 @@ Serve a [Chatterbox](https://huggingface.co/ResembleAI/chatterbox) TTS server wi
 
 ## Install
 
-Chatterbox can't be installed on Python versions > 3.12. You can use `conda` to use another version. If you're already running Python 3.12 ou 3.11, you can just use a `venv` (`python -m venv venv && source venv/bin/activate`) and ignore the conda part.
+Chatterbox can't be installed on Python versions > 3.12. You can use `conda` to use the right version. If you're already running Python 3.12 or 3.11, you can just use a `venv` (`python -m venv venv && source venv/bin/activate`) and ignore the conda part.
 
 ```sh
 conda create -n chatterbox python=3.12
