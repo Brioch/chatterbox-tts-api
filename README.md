@@ -67,6 +67,16 @@ Example API call with `curl`:
 curl -X POST http://localhost:5001/v1/audio/speech -H "Content-Type: application/json" -d '{"input": "Hello, this is a test.", "voice": "alloy"}' --output speech.wav
 ```
 
+### Using the web UI
+
+First, run the API server. Then start the web UI server:
+
+```sh
+python -m http.server -d public -b 127.0.0.1
+```
+
+Then open `http://localhost:8000` in your browser. You can set the API URL, enter text and select a voice to generate speech.
+
 ### Usage in SillyTavern
 
 See [SillyTavern docs](docs/usage-sillytavern.md)

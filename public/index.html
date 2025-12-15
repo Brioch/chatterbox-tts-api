@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI Speech API Caller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button.primary-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        button.secondary-button {
+            /* a light gray */
+            background-color: #f0f0f0;
+            color: black;
+            &:hover {
+                background-color: #e0e0e0;
+            }
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            min-height: 50px;
+        }
+        select {
+            padding: 8px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <form>
+        <div class="container">
+            <h1>OpenAI Speech API Caller</h1>
+            <p>Enter text to generate speech using the OpenAI API.
+            <div>
+                <label for="baseUrlInput">Base URL</label>
+                <input type="url" id="baseUrlInput" value="http://localhost:5001">
+            </div>
+            <div>
+                <label for="textInput">Text to speak</label>
+                <textarea id="textInput" placeholder="Enter text here..."></textarea>
+            </div>
+            <div>
+                <label for="voiceSelect">Voice</label>
+                <select id="voiceSelect">
+                    <!-- <option value="alloy">Alloy</option> -->
+                </select>
+            </div>
+            <div>
+                <label for="speedInput">Speed</label>
+                <input type="number" id="speedInput" min="0.1" max="2.0" step="0.1" value="1.0">
+            </div>
+            <div>
+                <label for="temperatureInput">Temperature (randomness)</label>
+                <input type="number" id="temperatureInput" min="0" max="5" step="0.1" value="0.8">
+            </div>
+            <div>
+                <label for="exaggerationInput">Exaggeration (emotion intensity)</label>
+                <input type="number" id="exaggerationInput" min="0.2" max="2" step="0.1" value="0.5">
+            </div>
+            <div>
+                <label for="cfgInput">CFG weight (pace)</label>
+                <input type="number" id="cfgInput" min="0.1" max="1" step="0.1" value="0.5">
+            </div>
+            <div>
+                <label for="responseFormatInput">Format</label>
+                <select id="responseFormatInput">
+                    <option value="wav">WAV</option>
+                    <option value="mp3">MP3</option>
+                    <option value="opus">OPUS</option>
+                    <option value="aac">AAC</option>
+                    <option value="flac">FLAC</option>
+                    <option value="pcm">PCM</option>
+                </select>
+            </div>
+            <button type="button" id="callApi" class="primary-button">Generate Speech</button>
+            <button type="reset" id="reset" class="secondary-button">Reset</button>
+            <div id="response"></div>
+            <div>
+                <!-- tips -->
+                <p>The default settings (exaggeration=0.5, cfg_weight=0.5) work well for most prompts across all languages. If the reference speaker has a fast speaking style, lowering cfg_weight to around 0.3 can improve pacing.
+                <p>Expressive or Dramatic Speech:
+                <ul>
+                    <li>Try lower cfg_weight values (e.g. ~0.3) and increase exaggeration to around 0.7 or higher.</li>
+                    <li>Higher exaggeration tends to speed up speech; reducing cfg_weight helps compensate with slower, more deliberate pacing.</li>
+                </ul>
+            </div>
+        </div>
+    </form>
+
+    <script async>
+        const baseUrl = document.getElementById('baseUrlInput').value;
+
+        if (!baseUrl.trim()) {
+            responseDiv.textContent = 'Please enter a base URL for the API.';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Populate the voice select dropdown with the supported voices
+            const voiceSelect = document.getElementById('voiceSelect');
+
+            // fetch voices from the openai compatible api
+            fetch(baseUrl+'/voices').then(response => response.json()).then(data => {
+                data.voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice;
+                    option.textContent = voice;
+                    voiceSelect.appendChild(option);
+                });
+            });
+        });
+
+        document.getElementById('callApi').addEventListener('click', async () => {
+            const textInput = document.getElementById('textInput').value;
+            const voiceSelect = document.getElementById('voiceSelect').value;
+            const speedInput = parseFloat(document.getElementById('speedInput').value);
+            const temperatureInput = parseFloat(document.getElementById('temperatureInput').value);
+            const cfgInput = parseFloat(document.getElementById('cfgInput').value);
+            const exaggerationInput = parseFloat(document.getElementById('exaggerationInput').value);
+            const responseFormatInput = document.getElementById('responseFormatInput').value;
+            const responseDiv = document.getElementById('response');
+
+            if (!textInput.trim()) {
+                responseDiv.textContent = 'Please enter some text to speak.';
+                return;
+            }
+
+            try {
+                responseDiv.textContent = 'Calling API...';
+
+                const start = Date.now();
+
+                const response = await fetch(baseUrl+'/v1/audio/speech', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        cfg_weight: cfgInput,
+                        exaggeration: exaggerationInput,
+                        input: textInput,
+                        response_format: responseFormatInput,
+                        temperature: temperatureInput,
+                        speed: speedInput,
+                        voice: voiceSelect
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status ${response.status}`);
+                }
+
+                const secSpent = (Date.now() - start) / 1000;
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const filename = `${voiceSelect}.${responseFormatInput}`;
+
+                responseDiv.innerHTML = `
+                    <p>API call successful!</p>
+                    <p>Took: ${secSpent}s.</p>
+                    <p>Audio file size: ${audioBlob.size} bytes</p>
+                    <p>Audio download: <a href="${audioUrl}" target="_blank" download="${filename}">${filename}</p>
+                    <audio autoplay controls src="${audioUrl}"></audio>
+                `;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

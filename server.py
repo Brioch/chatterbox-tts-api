@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS, cross_origin
 import io
 import numpy as np
 import wave
@@ -47,7 +48,14 @@ parser.add_argument(
     metavar="Chatterbox|Chatterbox-Turbo",
     type=str,
     default="Chatterbox",
-)  # Chatterbox-Turbo is not supported yet, as it requires a different API call and paramete
+)
+parser.add_argument(
+    "--cors-allow-origin",
+    help="CORS allowed origin. Default: http://localhost:8000",
+    type=str,
+    default="http://localhost:8000",
+)
+
 args = parser.parse_args()
 
 AUDIO_PROMPT_PATH = args.voices_dir
@@ -63,10 +71,12 @@ AUDIO_CFG_WEIGHT = args.cfg
 SUPPORTED_VOICES=args.supported_voices.split(",")
 SUPPORTED_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
 MODEL="Chatterbox"
+CORS_ALLOWED_ORIGIN=args.cors_allow_origin
 
 print(f"🚀 Running on device: {DEVICE}")
 
 app = Flask(__name__)
+CORS(app, resources={r"/v1/audio/speech": {"origins": CORS_ALLOWED_ORIGIN}})
 
 if MODEL == "Chatterbox-Turbo":
     from chatterbox.tts_turbo import ChatterboxTurboTTS as ChatterboxTTS
@@ -76,16 +86,16 @@ elif MODEL=="Chatterbox":
 # Initialize the TTS model
 tts_model = ChatterboxTTS.from_pretrained(DEVICE)
 
-def generate_audio(text, voice, speed=1.0):
+def generate_audio(text, voice, speed=1.0, cfg_weight=AUDIO_CFG_WEIGHT, temperature=AUDIO_TEMPERATURE, exaggeration=AUDIO_EXAGGERATION):
     voice_file = AUDIO_PROMPT_PATH + f"{voice}.wav"
 
     # Generate the waveform
     wav = tts_model.generate(
         text,
         audio_prompt_path=voice_file,
-        exaggeration=AUDIO_EXAGGERATION,
-        temperature=AUDIO_TEMPERATURE,
-        cfg_weight=AUDIO_CFG_WEIGHT,
+        exaggeration=exaggeration,
+        temperature=temperature,
+        cfg_weight=cfg_weight,
     )
 
     audio_data = wav.squeeze(0).numpy()
@@ -135,10 +145,12 @@ def speech():
     # Extract parameters from the request
     text = data.get("input")
     voice = data.get("voice")
-    speed = data.get("speed", 1.0)  # Default speed is 1.0
-    response_format = data.get(
-        "response_format", "wav"
-    )  # Default response format is wav
+    speed = data.get("speed", 1.0)
+    cfg = data.get("cfg_weight", AUDIO_CFG_WEIGHT)
+    temperature = data.get("temperature", AUDIO_TEMPERATURE)
+    exaggeration = data.get("exaggeration", AUDIO_EXAGGERATION)
+    response_format = data.get("response_format", "wav")
+    print(f"Got request: {data}")
 
     # Validate parameters
     if not text or len(text) > 4096:
@@ -164,7 +176,7 @@ def speech():
         )
 
     # Generate audio from the text
-    audio_data = generate_audio(text, voice, speed)
+    audio_data = generate_audio(text, voice, speed, cfg, temperature, exaggeration)
 
     # Convert the audio data to the desired format
     converted_audio_data = convert_audio_format(audio_data, response_format)
@@ -183,6 +195,10 @@ def speech():
         download_name=f"speech.{response_format}",
     )
 
+# add a /voices endpoint that returns the supported voices
+@app.route("/voices", methods=["GET"])
+def get_voices():
+    return jsonify({"voices": SUPPORTED_VOICES})
 
 if __name__ == "__main__":
     app.run(host=API_HOST, port=API_PORT)
