@@ -4,10 +4,21 @@ Serve a [Chatterbox](https://huggingface.co/ResembleAI/chatterbox) TTS server wi
 
 ## Install
 
-Chatterbox can't be installed on Python versions > 3.12. You can use `conda` to use the right version. If you're already running Python 3.12 or 3.11, you can just use a `venv` (`python -m venv venv && source venv/bin/activate`) and ignore the conda part.
+### Using uv
+
+`uv` is supported as a faster alternative to conda and pip.
 
 ```sh
-conda create -n chatterbox python=3.12
+uv sync
+uv run server.py
+```
+
+### Using pip
+
+Chatterbox recommends Python 3.11. You can use `conda` to install it. If you're already running Python 3.11, you can just use a `venv` (`python -m venv venv && source venv/bin/activate`) and ignore the conda part.
+
+```sh
+conda create -n chatterbox python=3.11
 conda activate chatterbox
 pip install -r requirements.txt
 ```
@@ -25,7 +36,9 @@ Voice are expected to be wav audio files. For example, with a directory `/home/u
 Running `server.py -h` will display the following help message.
 
 ```
-usage: server.py [-h] [--port PORT] [--host HOST] [--exaggeration EXAGGERATION] [--temperature TEMPERATURE] [--cfg CFG] voices_dir supported_voices
+usage: server.py [-h] [--port PORT] [--host HOST] [--exaggeration EXAGGERATION] [--temperature TEMPERATURE] [--cfg CFG]
+                 [--model Chatterbox|Chatterbox-Turbo]
+                 voices_dir supported_voices
 
 positional arguments:
   voices_dir            Path to the audio prompt files dir.
@@ -40,6 +53,8 @@ options:
   --temperature TEMPERATURE
                         Temperature for the audio. Default: 0.8
   --cfg CFG             CFG weight for the audio. Default: 0.5
+  --model Chatterbox|Chatterbox-Turbo
+                        Model to use. Default: Chatterbox
 ```
 
 ### Using the API

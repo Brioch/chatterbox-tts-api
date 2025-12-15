@@ -3,7 +3,6 @@ import io
 import numpy as np
 import wave
 import torch
-from chatterbox.tts import ChatterboxTTS
 import argparse
 from pydub import AudioSegment
 
@@ -41,6 +40,14 @@ parser.add_argument(
     type=float,
     default=0.5,
 )
+parser.add_argument(
+    "--model",
+    help="Model to use. Default: Chatterbox",
+    choices=["Chatterbox", "Chatterbox-Turbo"],
+    metavar="Chatterbox|Chatterbox-Turbo",
+    type=str,
+    default="Chatterbox",
+)  # Chatterbox-Turbo is not supported yet, as it requires a different API call and paramete
 args = parser.parse_args()
 
 AUDIO_PROMPT_PATH = args.voices_dir
@@ -55,10 +62,17 @@ AUDIO_TEMPERATURE = args.temperature
 AUDIO_CFG_WEIGHT = args.cfg
 SUPPORTED_VOICES=args.supported_voices.split(",")
 SUPPORTED_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
+MODEL="Chatterbox"
 
 print(f"🚀 Running on device: {DEVICE}")
 
 app = Flask(__name__)
+
+if MODEL == "Chatterbox-Turbo":
+    from chatterbox.tts_turbo import ChatterboxTurboTTS as ChatterboxTTS
+elif MODEL=="Chatterbox":
+    from chatterbox.tts import ChatterboxTTS
+
 # Initialize the TTS model
 tts_model = ChatterboxTTS.from_pretrained(DEVICE)
 

@@ -1,0 +1,15 @@
+[project]
+name = "chatterbox-tts-api"
+version = "0.1.0"
+description = "Serve a Chatterbox TTS server with an OpenAI Compatible API Speech endpoint"
+readme = "README.md"
+requires-python = "~=3.11.0"
+dependencies = [
+    "chatterbox-tts~=0.1.6",
+    "flask>=3.1.2",
+    "numpy>=1.25.2",
+    "pydub>=0.25.1",
+    "setuptools>=80.9.0",
+]
+[tool.uv.extra-build-dependencies]
+    pkuseg = ["numpy"]
