@@ -13,25 +13,26 @@ ENV PYTHONUNBUFFERED=1
 ENV API_PORT=5001
 ENV API_HOST=0.0.0.0
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    python3-pip \
-    && apt-get clean
+COPY --from=ghcr.io/astral-sh/uv:0.9.17 /uv /uvx /bin/
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the requirements file
-COPY requirements.txt .
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Copy the project into the image
+COPY . /app
 
-# Copy the application code
-COPY server.py .
+# Sync the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
 
 # Expose the port the app runs on
 EXPOSE ${API_PORT}
 
 # Command to run the application
-CMD ["python3", "server.py"]
+CMD ["uv", "run", "server.py"]

@@ -1,0 +1,6 @@
+.DS_Store
+.venv
+venv
+/output
+/voices
+__pycache__
