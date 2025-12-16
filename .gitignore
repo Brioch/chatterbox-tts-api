@@ -4,3 +4,4 @@ venv
 /.env
 /output
 /voices
+__pycache__

@@ -1,18 +1,19 @@
 from flask import Flask, request, jsonify, send_file
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import io
 import numpy as np
 import wave
 import torch
 import argparse
 from pydub import AudioSegment
+import utils
 
 parser = argparse.ArgumentParser("server.py")
 parser.add_argument("voices_dir", help="Path to the audio prompt files dir.", type=str)
 parser.add_argument(
     "supported_voices",
     help="Comma-separated list of supported voices. Example: 'alloy,ash,ballad,coral,echo,fable,onyx,nova,sage,shimmer,verse'",
-    type=str
+    type=str,
 )
 parser.add_argument(
     "--port", help="Port to run the server on. Default: 5001", type=int, default=5001
@@ -68,10 +69,10 @@ API_HOST = args.host
 AUDIO_EXAGGERATION = args.exaggeration
 AUDIO_TEMPERATURE = args.temperature
 AUDIO_CFG_WEIGHT = args.cfg
-SUPPORTED_VOICES=args.supported_voices.split(",")
+SUPPORTED_VOICES = args.supported_voices.split(",")
 SUPPORTED_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
-MODEL="Chatterbox"
-CORS_ALLOWED_ORIGIN=args.cors_allow_origin
+MODEL = "Chatterbox"
+CORS_ALLOWED_ORIGIN = args.cors_allow_origin
 
 print(f"🚀 Running on device: {DEVICE}")
 
@@ -80,27 +81,47 @@ CORS(app, resources={r"/v1/audio/speech": {"origins": CORS_ALLOWED_ORIGIN}})
 
 if MODEL == "Chatterbox-Turbo":
     from chatterbox.tts_turbo import ChatterboxTurboTTS as ChatterboxTTS
-elif MODEL=="Chatterbox":
+elif MODEL == "Chatterbox":
     from chatterbox.tts import ChatterboxTTS
 
 # Initialize the TTS model
 tts_model = ChatterboxTTS.from_pretrained(DEVICE)
 
-def generate_audio(text, voice, speed=1.0, cfg_weight=AUDIO_CFG_WEIGHT, temperature=AUDIO_TEMPERATURE, exaggeration=AUDIO_EXAGGERATION):
+
+def generate_audio(
+    text,
+    voice,
+    speed=1.0,
+    cfg_weight=AUDIO_CFG_WEIGHT,
+    temperature=AUDIO_TEMPERATURE,
+    exaggeration=AUDIO_EXAGGERATION,
+    chunk_size=250,
+):
     voice_file = AUDIO_PROMPT_PATH + f"{voice}.wav"
 
-    # Generate the waveform
-    wav = tts_model.generate(
-        text,
-        audio_prompt_path=voice_file,
-        exaggeration=exaggeration,
-        temperature=temperature,
-        cfg_weight=cfg_weight,
-    )
+    all_audio_data = []
 
-    audio_data = wav.squeeze(0).numpy()
-    audio_data = np.clip(audio_data, -1.0, 1.0)  # Clip to prevent saturation
-    audio_data = (audio_data * 32767).astype(np.int16)
+    chunks = utils.chunk_text_by_sentences(text, chunk_size)
+
+    # split in chunks
+    for chunk in chunks:
+        print(f"Generating audio for chunk: {chunk}")
+
+        # Generate the waveform
+        wav = tts_model.generate(
+            chunk,
+            audio_prompt_path=voice_file,
+            exaggeration=exaggeration,
+            temperature=temperature,
+            cfg_weight=cfg_weight,
+        )
+
+        audio_data = wav.squeeze(0).numpy()
+        audio_data = np.clip(audio_data, -1.0, 1.0)  # Clip to prevent saturation
+        audio_data = (audio_data * 32767).astype(np.int16)
+        all_audio_data.append(audio_data)
+
+    audio_data = np.concatenate(all_audio_data)
 
     # Create a BytesIO object to write the WAV file
     wav_io = io.BytesIO()
@@ -151,15 +172,12 @@ def speech():
     exaggeration = data.get("exaggeration", AUDIO_EXAGGERATION)
     response_format = data.get("response_format", "wav")
     print(f"Got request: {data}")
+    chunk_size = data.get("chunk_size", 250)
 
     # Validate parameters
-    if not text or len(text) > 4096:
+    if not text:
         return (
-            jsonify(
-                {
-                    "error": "Input text is required and must be less than 4096 characters."
-                }
-            ),
+            jsonify({"error": "Input text is required."}),
             400,
         )
     if voice not in SUPPORTED_VOICES:
@@ -175,14 +193,19 @@ def speech():
             400,
         )
 
+    if chunk_size < 1:
+        return jsonify({"error": "Chunk size must be greater than 0."}), 400
+
     # Generate audio from the text
-    audio_data = generate_audio(text, voice, speed, cfg, temperature, exaggeration)
+    audio_data = generate_audio(
+        text, voice, speed, cfg, temperature, exaggeration, chunk_size
+    )
 
     # Convert the audio data to the desired format
     converted_audio_data = convert_audio_format(audio_data, response_format)
 
     # Create a BytesIO object for the response
-    audio_io = io.BytesIO(audio_data)
+    audio_io = io.BytesIO(converted_audio_data)
     audio_io.seek(0)
 
     # Set the appropriate MIME type based on the requested response format
@@ -195,10 +218,12 @@ def speech():
         download_name=f"speech.{response_format}",
     )
 
+
 # add a /voices endpoint that returns the supported voices
 @app.route("/voices", methods=["GET"])
 def get_voices():
     return jsonify({"voices": SUPPORTED_VOICES})
+
 
 if __name__ == "__main__":
     app.run(host=API_HOST, port=API_PORT)

@@ -199,6 +199,11 @@ dependencies = [
     { name = "setuptools" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "chatterbox-tts", specifier = "~=0.1.6" },
@@ -208,6 +213,9 @@ requires-dist = [
     { name = "pydub", specifier = ">=0.25.1" },
     { name = "setuptools", specifier = ">=80.9.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.14.9" }]
 
 [[package]]
 name = "click"
