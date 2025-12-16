@@ -71,7 +71,7 @@ AUDIO_TEMPERATURE = args.temperature
 AUDIO_CFG_WEIGHT = args.cfg
 SUPPORTED_VOICES = args.supported_voices.split(",")
 SUPPORTED_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
-MODEL = "Chatterbox"
+MODEL = args.model
 CORS_ALLOWED_ORIGIN = args.cors_allow_origin
 
 print(f"🚀 Running on device: {DEVICE}")
