@@ -1,6 +1,14 @@
 # SillyTavern
 
-As it exposes an OpenAI compatible API, this program can be used as a SillyTavern TTS endpoint.
+## Chatterbox
+
+SillyTavern is compatible with the `Chatterbox` TTS provider. Select it and set the base URL to your server's address (e.g. `http://127.0.0.1:5001`).
+
+This option retrieves the voices from the server and allows for more advanced settings, such as `cfg_weight`, `temperature`, and `exaggeration`.
+
+## OpenAI Compatible API
+
+This program's OpenAI compatible API can alternatively be used as a SillyTavern TTS endpoint.
 
 Select TTS Provider: `OpenAI Compatible`
 

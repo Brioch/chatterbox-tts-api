@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import torch
 
 # Load environment variables from .env file
 load_dotenv()
@@ -13,7 +14,7 @@ if not os.path.exists(AUDIO_PROMPT_PATH):
 if AUDIO_PROMPT_PATH[-1] != "/":
     AUDIO_PROMPT_PATH += "/"
 
-DEVICE = "cuda" if "CUDA_VERSION" in os.environ else "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 API_PORT = os.getenv("API_PORT", "5001")
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
 AUDIO_EXAGGERATION = float(os.getenv("AUDIO_EXAGGERATION", 0.5))
@@ -21,6 +22,32 @@ AUDIO_TEMPERATURE = float(os.getenv("AUDIO_TEMPERATURE", 0.8))
 AUDIO_CFG_WEIGHT = float(os.getenv("AUDIO_CFG_WEIGHT", 0.5))
 SUPPORTED_VOICES = os.getenv("SUPPORTED_VOICES", "").split(",")
 SUPPORTED_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
+SUPPORTED_MODELS = ["Chatterbox", "Chatterbox-Turbo", "Chatterbox-Multilingual"]
+SUPPORTED_LANGUAGE_IDS = [
+    "ar",
+    "da",
+    "de",
+    "el",
+    "en",
+    "es",
+    "fi",
+    "fr",
+    "he",
+    "hi",
+    "it",
+    "ja",
+    "ko",
+    "ms",
+    "nl",
+    "no",
+    "pl",
+    "pt",
+    "ru",
+    "sv",
+    "sw",
+    "tr",
+    "zh",
+]
 MODEL = os.getenv("MODEL", "Chatterbox")
 CORS_ALLOWED_ORIGIN = os.getenv("CORS_ALLOWED_ORIGIN", "*")
 SEED = int(os.getenv("SEED", 0))

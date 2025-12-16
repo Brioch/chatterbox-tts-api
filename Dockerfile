@@ -39,4 +39,4 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 EXPOSE ${API_PORT}
 
 # Command to run the application
-CMD ["uv", "run", "server.py"]
+CMD ["uv", "run", "main.py"]

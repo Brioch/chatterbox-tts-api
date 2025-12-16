@@ -10,7 +10,7 @@ Serve a [Chatterbox](https://huggingface.co/ResembleAI/chatterbox) TTS server wi
 
 ```sh
 uv sync
-uv run server.py
+uv run main.py
 ```
 
 ### Using pip
@@ -46,7 +46,7 @@ podman compose up
 ## Usage
 
 ```sh
-python server.py
+python main.py
 ```
 
 Server will run by default on http://127.0.0.1:5001/v1/audio/speech.
@@ -83,12 +83,24 @@ WEB_PORT              Port to run the web UI on when using the Dockerfile. Defau
 
 ### Using the API
 
+## /v1/audio/speech
+
 See [OpenAI Compatible API Speech endpoint](https://platform.openai.com/docs/api-reference/audio/createSpeech). This API takes a json containing an input text and a voice and replies with the TTS audio data. 
 
 Example API call with `curl`:
 
 ```sh
 curl -X POST http://localhost:5001/v1/audio/speech -H "Content-Type: application/json" -d '{"input": "Hello, this is a test.", "voice": "alloy"}' --output speech.wav
+```
+
+## /tts
+
+This API is similar to the OpenAI API but it allows for more parameters.
+
+Parameters are text, predefined_voice_id, model, speed_factor, cfg_weight, temperature, exaggeration, output_format, seed, language_id.
+
+```sh
+curl -X POST http://localhost:5001/tts -H "Content-Type: application/json" -d '{"text": "Hello, this is a test.", "predefined_voice_id": "alloy", "model": "Chatterbox-Turbo"}' --output speech.wav
 ```
 
 ### Using the web UI

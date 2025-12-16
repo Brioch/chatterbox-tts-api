@@ -5,17 +5,8 @@ from pydub import AudioSegment
 import utils
 import config
 
-if config.MODEL == "Chatterbox-Turbo":
-    from chatterbox.tts_turbo import ChatterboxTurboTTS as ChatterboxTTS
-elif config.MODEL == "Chatterbox":
-    from chatterbox.tts import ChatterboxTTS
-elif config.MODEL == "Chatterbox-Multilingual":
-    from chatterbox.mtl_tts import ChatterboxMultilingualTTS as ChatterboxTTS
-else:
-    raise ValueError(f"Unknown model: {config.MODEL}")
-
-# Initialize the TTS model
-tts_model = ChatterboxTTS.from_pretrained(config.DEVICE)
+_cached_tts_model = None
+_current_model_name = None
 
 
 def generate_audio(
@@ -27,7 +18,29 @@ def generate_audio(
     exaggeration: float = config.AUDIO_EXAGGERATION,
     chunk_size: int = 250,
     seed: int = 0,
+    model_name: str = config.MODEL,
+    language_id: str = config.LANGUAGE_ID,
 ):
+    global _cached_tts_model, _current_model_name
+
+    if _current_model_name != model_name:
+        print(f"Loading model: {model_name}")
+        if model_name == "Chatterbox-Turbo":
+            from chatterbox.tts_turbo import ChatterboxTurboTTS as ChatterboxTTS
+        elif model_name == "Chatterbox":
+            from chatterbox.tts import ChatterboxTTS
+        elif model_name == "Chatterbox-Multilingual":
+            from chatterbox.mtl_tts import ChatterboxMultilingualTTS as ChatterboxTTS
+        else:
+            raise ValueError(f"Unknown model: {model_name}")
+
+        _cached_tts_model = ChatterboxTTS.from_pretrained(config.DEVICE)
+        _current_model_name = model_name
+    else:
+        print(f"Using cached model: {model_name}")
+
+    tts_model = _cached_tts_model
+
     if seed != 0:
         utils.set_seed(seed)  # For reproducibility
 
@@ -49,8 +62,8 @@ def generate_audio(
             temperature=temperature,
             cfg_weight=cfg_weight,
             **(
-                {"language_id": config.LANGUAGE_ID}
-                if config.MODEL == "Chatterbox-Multilingual"
+                {"language_id": language_id}
+                if model_name == "Chatterbox-Multilingual"
                 else {}
             ),
         )
@@ -67,7 +80,7 @@ def generate_audio(
     with wave.open(wav_io, "wb") as wf:
         wf.setnchannels(1)  # Mono
         wf.setsampwidth(2)  # 2 bytes for int16
-        wf.setframerate(tts_model.sr * speed)  # Sample rate (adjust as needed)
+        wf.setframerate(int(tts_model.sr * speed))  # Sample rate (adjust as needed)
         wf.writeframes(audio_data.tobytes())
 
     wav_io.seek(0)

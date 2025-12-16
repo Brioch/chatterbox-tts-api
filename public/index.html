@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenAI Speech API Caller</title>
+    <title>Chatterbox TTS</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -58,8 +58,8 @@
 <body>
     <form>
         <div class="container">
-            <h1>OpenAI Speech API Caller</h1>
-            <p>Enter text to generate speech using the OpenAI API.
+            <h1>Chatterbox TTS</h1>
+            <p>Enter text to generate speech using the TTS API.
             <div>
                 <label for="baseUrlInput">Base URL</label>
                 <input type="url" id="baseUrlInput" value="http://localhost:5001">
@@ -72,6 +72,25 @@
                 <label for="voiceSelect">Voice</label>
                 <select id="voiceSelect">
                     <!-- <option value="alloy">Alloy</option> -->
+                </select>
+            </div>
+            <div>
+                <label for="modelSelect">Model</label>
+                <select id="modelSelect"></select>
+            </div>
+            <div>
+                <label for="modelSelect">Language</label>
+                <select id="languageSelect"></select>
+            </div>
+            <div>
+                <label for="responseFormatInput">Format</label>
+                <select id="responseFormatInput">
+                    <option value="wav">WAV</option>
+                    <option value="mp3">MP3</option>
+                    <option value="opus">OPUS</option>
+                    <option value="aac">AAC</option>
+                    <option value="flac">FLAC</option>
+                    <option value="pcm">PCM</option>
                 </select>
             </div>
             <div>
@@ -93,17 +112,6 @@
             <div>
                 <label for="seedInput">Seed (for reproducibility, 0 is random)</label>
                 <input type="number" id="seedInput" min="0" step="1" value="0">
-            </div>
-            <div>
-                <label for="responseFormatInput">Format</label>
-                <select id="responseFormatInput">
-                    <option value="wav">WAV</option>
-                    <option value="mp3">MP3</option>
-                    <option value="opus">OPUS</option>
-                    <option value="aac">AAC</option>
-                    <option value="flac">FLAC</option>
-                    <option value="pcm">PCM</option>
-                </select>
             </div>
             <button type="button" id="callApi" class="primary-button">Generate Speech</button>
             <button type="reset" id="reset" class="secondary-button">Reset</button>
@@ -154,6 +162,39 @@
                     voiceSelect.appendChild(option);
                 });
             });
+
+            const modelsSelect = document.getElementById('modelSelect');
+            const languageSelect = document.getElementById('languageSelect');
+
+            fetch(baseUrl+'/models').then(response => response.json()).then(data => {
+                data.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    modelsSelect.appendChild(option);
+                });
+
+                languageSelect.toggleAttribute('disabled', modelsSelect.value !== 'Chatterbox-Multilingual');
+            });
+
+            // toggle language select
+            modelsSelect.addEventListener('change', () => {
+                languageSelect.toggleAttribute('disabled', modelsSelect.value !== 'Chatterbox-Multilingual');
+            });
+
+            fetch(baseUrl+'/languages').then(response => response.json()).then(data => {
+                data.languages.forEach(language => {
+                    const option = document.createElement('option');
+                    option.value = language;
+                    option.textContent = language;
+
+                    if (language === 'en') {
+                        option.selected = true;
+                    }
+
+                    languageSelect.appendChild(option);
+                });
+            });
         });
 
         document.getElementById('callApi').addEventListener('click', async () => {
@@ -165,6 +206,8 @@
             const exaggerationInput = parseFloat(document.getElementById('exaggerationInput').value);
             const responseFormatInput = document.getElementById('responseFormatInput').value;
             const seedValue = parseInt(document.getElementById('seedInput').value);
+            const modelSelect = document.getElementById('modelSelect').value;
+            const languageSelect = document.getElementById('languageSelect').value;
             const responseDiv = document.getElementById('response');
 
             if (!textInput.trim()) {
@@ -177,7 +220,7 @@
 
                 const start = Date.now();
 
-                const response = await fetch(baseUrl+'/v1/audio/speech', {
+                const response = await fetch(baseUrl+'/tts', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -185,12 +228,14 @@
                     body: JSON.stringify({
                         cfg_weight: cfgInput,
                         exaggeration: exaggerationInput,
-                        input: textInput,
-                        response_format: responseFormatInput,
+                        text: textInput,
+                        language_id: languageSelect,
+                        model: modelSelect,
+                        output_format: responseFormatInput,
                         temperature: temperatureInput,
                         seed: seedValue,
                         speed: speedInput,
-                        voice: voiceSelect
+                        predefined_voice_id: voiceSelect
                     })
                 });
 
