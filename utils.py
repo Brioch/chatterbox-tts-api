@@ -7,6 +7,7 @@
 
 import logging
 import re
+import random
 
 # import time
 # import io
@@ -17,7 +18,8 @@ from typing import Optional, Tuple, Set, List
 
 # import soundfile as sf
 # import torchaudio  # For saving PyTorch tensors and potentially speed adjustment.
-# import torch
+import torch
+import numpy as np
 
 # Configuration manager to get paths dynamically.
 # Assumes config.py and its config_manager are in the same directory or accessible via PYTHONPATH.
@@ -968,6 +970,22 @@ def chunk_text_by_sentences(
 
     logger.info(f"Text chunking complete. Generated {len(text_chunks)} chunk(s).")
     return text_chunks
+
+
+def set_seed(seed_value: int):
+    """
+    Sets the seed for torch, random, and numpy for reproducibility.
+    This is called if a non-zero seed is provided for generation.
+    """
+    torch.manual_seed(seed_value)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed_value)
+        torch.cuda.manual_seed_all(seed_value)  # if using multi-GPU
+    if torch.backends.mps.is_available():
+        torch.mps.manual_seed(seed_value)
+    random.seed(seed_value)
+    np.random.seed(seed_value)
+    logger.info(f"Global seed set to: {seed_value}")
 
 
 # --- File System Utilities ---

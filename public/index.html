@@ -91,6 +91,10 @@
                 <input type="number" id="cfgInput" min="0.1" max="1" step="0.1" value="0.5">
             </div>
             <div>
+                <label for="seedInput">Seed (for reproducibility, 0 is random)</label>
+                <input type="number" id="seedInput" min="0" step="1" value="0">
+            </div>
+            <div>
                 <label for="responseFormatInput">Format</label>
                 <select id="responseFormatInput">
                     <option value="wav">WAV</option>
@@ -112,6 +116,20 @@
                     <li>Try lower cfg_weight values (e.g. ~0.3) and increase exaggeration to around 0.7 or higher.</li>
                     <li>Higher exaggeration tends to speed up speech; reducing cfg_weight helps compensate with slower, more deliberate pacing.</li>
                 </ul>
+                <p>
+                    When using the Chatterbox Turbo model, various paralinguistic tags can be used to control the speech style. Available tags are:
+                    <ul>
+                        <li>[clear throat]</li>
+                        <li>[sigh]</li>
+                        <li>[shush]</li>
+                        <li>[cough]</li>
+                        <li>[groan]</li>
+                        <li>[sniff]</li>
+                        <li>[gasp]</li>
+                        <li>[chuckle]</li>
+                        <li>[laugh]</li>
+                    </ul>
+                </p>
             </div>
         </div>
     </form>
@@ -146,6 +164,7 @@
             const cfgInput = parseFloat(document.getElementById('cfgInput').value);
             const exaggerationInput = parseFloat(document.getElementById('exaggerationInput').value);
             const responseFormatInput = document.getElementById('responseFormatInput').value;
+            const seedValue = parseInt(document.getElementById('seedInput').value);
             const responseDiv = document.getElementById('response');
 
             if (!textInput.trim()) {
@@ -169,6 +188,7 @@
                         input: textInput,
                         response_format: responseFormatInput,
                         temperature: temperatureInput,
+                        seed: seedValue,
                         speed: speedInput,
                         voice: voiceSelect
                     })

@@ -56,6 +56,12 @@ parser.add_argument(
     type=str,
     default="http://localhost:8000",
 )
+parser.add_argument(
+    "--seed",
+    help="Seed for reproducibility. Default: 0 (random)",
+    type=int,
+    default=0,
+)
 
 args = parser.parse_args()
 
@@ -73,8 +79,12 @@ SUPPORTED_VOICES = args.supported_voices.split(",")
 SUPPORTED_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
 MODEL = args.model
 CORS_ALLOWED_ORIGIN = args.cors_allow_origin
+SEED = args.seed
 
 print(f"🚀 Running on device: {DEVICE}")
+
+if SEED != 0:
+    utils.set_seed(SEED)  # For reproducibility
 
 app = Flask(__name__)
 CORS(app, resources={r"/v1/audio/speech": {"origins": CORS_ALLOWED_ORIGIN}})
@@ -89,14 +99,18 @@ tts_model = ChatterboxTTS.from_pretrained(DEVICE)
 
 
 def generate_audio(
-    text,
-    voice,
-    speed=1.0,
-    cfg_weight=AUDIO_CFG_WEIGHT,
-    temperature=AUDIO_TEMPERATURE,
-    exaggeration=AUDIO_EXAGGERATION,
-    chunk_size=250,
+    text: str,
+    voice: str,
+    speed: float = 1.0,
+    cfg_weight: float = AUDIO_CFG_WEIGHT,
+    temperature: float = AUDIO_TEMPERATURE,
+    exaggeration: float = AUDIO_EXAGGERATION,
+    chunk_size: int = 250,
+    seed: int = 0,
 ):
+    if seed != 0:
+        utils.set_seed(seed)  # For reproducibility
+
     voice_file = AUDIO_PROMPT_PATH + f"{voice}.wav"
 
     all_audio_data = []
@@ -171,6 +185,8 @@ def speech():
     temperature = data.get("temperature", AUDIO_TEMPERATURE)
     exaggeration = data.get("exaggeration", AUDIO_EXAGGERATION)
     response_format = data.get("response_format", "wav")
+    seed = data.get("seed", None)
+
     print(f"Got request: {data}")
     chunk_size = data.get("chunk_size", 250)
 
@@ -198,7 +214,7 @@ def speech():
 
     # Generate audio from the text
     audio_data = generate_audio(
-        text, voice, speed, cfg, temperature, exaggeration, chunk_size
+        text, voice, speed, cfg, temperature, exaggeration, chunk_size, seed
     )
 
     # Convert the audio data to the desired format
