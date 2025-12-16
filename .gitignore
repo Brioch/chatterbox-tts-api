@@ -5,3 +5,4 @@ venv
 /output
 /voices
 __pycache__
+compose.override.yaml
