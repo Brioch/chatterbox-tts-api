@@ -37,7 +37,8 @@ Running `server.py -h` will display the following help message.
 
 ```
 usage: server.py [-h] [--port PORT] [--host HOST] [--exaggeration EXAGGERATION] [--temperature TEMPERATURE] [--cfg CFG]
-                 [--model Chatterbox|Chatterbox-Turbo]
+                 [--model Chatterbox|Chatterbox-Turbo|Chatterbox-Multilingual] [--cors-allow-origin CORS_ALLOW_ORIGIN] [--seed SEED]
+                 [--language-id ar|da|de|el|en|es|fi|fr|he|hi|it|ja|ko|ms|nl|no|pl|pt|ru|sv|sw|tr|zh]
                  voices_dir supported_voices
 
 positional arguments:
@@ -53,8 +54,13 @@ options:
   --temperature TEMPERATURE
                         Temperature for the audio. Default: 0.8
   --cfg CFG             CFG weight for the audio. Default: 0.5
-  --model Chatterbox|Chatterbox-Turbo
+  --model Chatterbox|Chatterbox-Turbo|Chatterbox-Multilingual
                         Model to use. Default: Chatterbox
+  --cors-allow-origin CORS_ALLOW_ORIGIN
+                        CORS allowed origin. Default: http://localhost:8000
+  --seed SEED           Seed for reproducibility. Default: 0 (random)
+  --language-id ar|da|de|el|en|es|fi|fr|he|hi|it|ja|ko|ms|nl|no|pl|pt|ru|sv|sw|tr|zh
+                        Language ID for the multilingual model. Default: en (english)
 ```
 
 ### Using the API

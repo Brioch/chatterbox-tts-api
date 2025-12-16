@@ -45,8 +45,8 @@ parser.add_argument(
 parser.add_argument(
     "--model",
     help="Model to use. Default: Chatterbox",
-    choices=["Chatterbox", "Chatterbox-Turbo"],
-    metavar="Chatterbox|Chatterbox-Turbo",
+    choices=["Chatterbox", "Chatterbox-Turbo", "Chatterbox-Multilingual"],
+    metavar="Chatterbox|Chatterbox-Turbo|Chatterbox-Multilingual",
     type=str,
     default="Chatterbox",
 )
@@ -61,6 +61,38 @@ parser.add_argument(
     help="Seed for reproducibility. Default: 0 (random)",
     type=int,
     default=0,
+)
+parser.add_argument(
+    "--language-id",
+    help="Language ID for the multilingual model. Default: en (english)",
+    choices=[
+        "ar",
+        "da",
+        "de",
+        "el",
+        "en",
+        "es",
+        "fi",
+        "fr",
+        "he",
+        "hi",
+        "it",
+        "ja",
+        "ko",
+        "ms",
+        "nl",
+        "no",
+        "pl",
+        "pt",
+        "ru",
+        "sv",
+        "sw",
+        "tr",
+        "zh",
+    ],
+    metavar="ar|da|de|el|en|es|fi|fr|he|hi|it|ja|ko|ms|nl|no|pl|pt|ru|sv|sw|tr|zh",
+    type=str,
+    default="en",
 )
 
 args = parser.parse_args()
@@ -80,6 +112,7 @@ SUPPORTED_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
 MODEL = args.model
 CORS_ALLOWED_ORIGIN = args.cors_allow_origin
 SEED = args.seed
+LANGUAGE_ID = args.language_id
 
 print(f"🚀 Running on device: {DEVICE}")
 
@@ -93,6 +126,10 @@ if MODEL == "Chatterbox-Turbo":
     from chatterbox.tts_turbo import ChatterboxTurboTTS as ChatterboxTTS
 elif MODEL == "Chatterbox":
     from chatterbox.tts import ChatterboxTTS
+elif MODEL == "Chatterbox-Multilingual":
+    from chatterbox.mtl_tts import ChatterboxMultilingualTTS as ChatterboxTTS
+else:
+    raise ValueError(f"Unknown model: {MODEL}")
 
 # Initialize the TTS model
 tts_model = ChatterboxTTS.from_pretrained(DEVICE)
@@ -128,6 +165,11 @@ def generate_audio(
             exaggeration=exaggeration,
             temperature=temperature,
             cfg_weight=cfg_weight,
+            **(
+                {"language_id": LANGUAGE_ID}
+                if MODEL == "Chatterbox-Multilingual"
+                else {}
+            ),
         )
 
         audio_data = wav.squeeze(0).numpy()
