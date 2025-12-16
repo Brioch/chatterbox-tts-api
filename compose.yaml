@@ -1,5 +1,6 @@
 services:
   chatterbox-tts-api:
+    container_name: chatterbox-tts-api
     image: chatterbox-tts-api
     build:
       context: .
@@ -22,7 +23,7 @@ services:
       - AUDIO_EXAGGERATION=${AUDIO_EXAGGERATION}
       - AUDIO_TEMPERATURE=${AUDIO_TEMPERATURE}
       - AUDIO_CFG_WEIGHT=${AUDIO_CFG_WEIGHT}
-      - CORS_ALLOWED_ORIGIN=${CORS_ALLOWED_ORIGIN}
+      - CORS_ALLOWED_ORIGIN=${CORS_ALLOWED_ORIGIN-*}
       - MODEL=${MODEL}
       - SEED=${SEED}
       - SUPPORTED_VOICES=${SUPPORTED_VOICES}
