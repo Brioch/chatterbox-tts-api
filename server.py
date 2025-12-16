@@ -4,115 +4,47 @@ import io
 import numpy as np
 import wave
 import torch
-import argparse
 from pydub import AudioSegment
 import utils
+from dotenv import load_dotenv
 
-parser = argparse.ArgumentParser("server.py")
-parser.add_argument("voices_dir", help="Path to the audio prompt files dir.", type=str)
-parser.add_argument(
-    "supported_voices",
-    help="Comma-separated list of supported voices. Example: 'alloy,ash,ballad,coral,echo,fable,onyx,nova,sage,shimmer,verse'",
-    type=str,
-)
-parser.add_argument(
-    "--port", help="Port to run the server on. Default: 5001", type=int, default=5001
-)
-parser.add_argument(
-    "--host",
-    help="Host to run the server on. Default: 127.0.0.1",
-    type=str,
-    default="127.0.0.1",
-)
-parser.add_argument(
-    "--exaggeration",
-    help="Exaggeration factor for the audio. Default: 0.5",
-    type=float,
-    default=0.5,
-)
-parser.add_argument(
-    "--temperature",
-    help="Temperature for the audio. Default: 0.8",
-    type=float,
-    default=0.8,
-)
-parser.add_argument(
-    "--cfg",
-    help="CFG weight for the audio. Default: 0.5",
-    type=float,
-    default=0.5,
-)
-parser.add_argument(
-    "--model",
-    help="Model to use. Default: Chatterbox",
-    choices=["Chatterbox", "Chatterbox-Turbo", "Chatterbox-Multilingual"],
-    metavar="Chatterbox|Chatterbox-Turbo|Chatterbox-Multilingual",
-    type=str,
-    default="Chatterbox",
-)
-parser.add_argument(
-    "--cors-allow-origin",
-    help="CORS allowed origin. Default: http://localhost:8000",
-    type=str,
-    default="http://localhost:8000",
-)
-parser.add_argument(
-    "--seed",
-    help="Seed for reproducibility. Default: 0 (random)",
-    type=int,
-    default=0,
-)
-parser.add_argument(
-    "--language-id",
-    help="Language ID for the multilingual model. Default: en (english)",
-    choices=[
-        "ar",
-        "da",
-        "de",
-        "el",
-        "en",
-        "es",
-        "fi",
-        "fr",
-        "he",
-        "hi",
-        "it",
-        "ja",
-        "ko",
-        "ms",
-        "nl",
-        "no",
-        "pl",
-        "pt",
-        "ru",
-        "sv",
-        "sw",
-        "tr",
-        "zh",
-    ],
-    metavar="ar|da|de|el|en|es|fi|fr|he|hi|it|ja|ko|ms|nl|no|pl|pt|ru|sv|sw|tr|zh",
-    type=str,
-    default="en",
-)
+# from dotenv import load_dotenv
+import os
 
-args = parser.parse_args()
+# Load environment variables from .env file
+load_dotenv()
 
-AUDIO_PROMPT_PATH = args.voices_dir
+AUDIO_PROMPT_PATH = os.getenv("VOICES_DIR")
+
+# check if path exists
+if not os.path.exists(AUDIO_PROMPT_PATH):
+    raise ValueError(f"Path {AUDIO_PROMPT_PATH} does not exist")
+
 if AUDIO_PROMPT_PATH[-1] != "/":
     AUDIO_PROMPT_PATH += "/"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-API_PORT = args.port
-API_HOST = args.host
-AUDIO_EXAGGERATION = args.exaggeration
-AUDIO_TEMPERATURE = args.temperature
-AUDIO_CFG_WEIGHT = args.cfg
-SUPPORTED_VOICES = args.supported_voices.split(",")
+API_PORT = os.getenv("API_PORT", "5001")
+API_HOST = os.getenv("API_HOST", "0.0.0.0")
+AUDIO_EXAGGERATION = float(os.getenv("AUDIO_EXAGGERATION", 0.5))
+AUDIO_TEMPERATURE = float(os.getenv("AUDIO_TEMPERATURE", 0.8))
+AUDIO_CFG_WEIGHT = float(os.getenv("AUDIO_CFG_WEIGHT", 0.5))
+SUPPORTED_VOICES = os.getenv("SUPPORTED_VOICES", "").split(",")
 SUPPORTED_RESPONSE_FORMATS = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
-MODEL = args.model
-CORS_ALLOWED_ORIGIN = args.cors_allow_origin
-SEED = args.seed
-LANGUAGE_ID = args.language_id
+MODEL = os.getenv("MODEL", "Chatterbox")
+CORS_ALLOWED_ORIGIN = os.getenv("CORS_ALLOWED_ORIGIN", "*")
+SEED = int(os.getenv("SEED", 0))
+LANGUAGE_ID = os.getenv("LANGUAGE_ID", "en")
+
+# if SUPPORTED_VOICES is empty, then we will use all voices in the AUDIO_PROMPT_PATH directory
+if SUPPORTED_VOICES == [""]:
+    print("No voices specified, using all voices in the AUDIO_PROMPT_PATH directory")
+
+    SUPPORTED_VOICES = [
+        f[:-4] for f in os.listdir(AUDIO_PROMPT_PATH) if f.endswith(".wav")
+    ]
+
+    print(f"Found {len(SUPPORTED_VOICES)} voices in the AUDIO_PROMPT_PATH directory")
 
 print(f"🚀 Running on device: {DEVICE}")
 
@@ -227,7 +159,7 @@ def speech():
     temperature = data.get("temperature", AUDIO_TEMPERATURE)
     exaggeration = data.get("exaggeration", AUDIO_EXAGGERATION)
     response_format = data.get("response_format", "wav")
-    seed = data.get("seed", None)
+    seed = data.get("seed", SEED)
 
     print(f"Got request: {data}")
     chunk_size = data.get("chunk_size", 250)

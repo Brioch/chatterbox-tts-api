@@ -2,3 +2,4 @@ numpy==1.26.0
 pydub
 flask
 chatterbox-tts
+# dotenv

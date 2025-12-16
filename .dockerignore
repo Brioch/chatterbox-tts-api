@@ -1,7 +1,6 @@
 .DS_Store
 .venv
 venv
-/.env
 /output
 /voices
 __pycache__
